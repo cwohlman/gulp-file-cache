@@ -7,7 +7,6 @@ var gutil = require('gulp-util'),
 var expect = chai.expect;
 
 describe('gulp-file-cache', function () {
-
   var fileCache = new FileCache(),
       d1 = new Date('2014-01-01'),
       d2 = new Date('2014-02-01'),
@@ -60,4 +59,48 @@ describe('gulp-file-cache', function () {
     stream.write(file3);
     stream.end();
   });
+
+  it('should follow files through renames', function (done) {
+    var fileCache = new FileCache(),
+    d1 = new Date('2014-01-01'),
+    d2 = new Date('2014-02-01'),
+    original = new gutil.File({
+      path: 'file1',
+      stat: {mtime: d1}
+    });
+
+    var unchanged = new gutil.File({
+      path: 'file1',
+      stat: {mtime: d1}
+    });
+    unchanged.history = ['file1']
+
+    var changed = new gutil.File({
+      path: 'file3',
+      stat: {mtime: d2}
+    });
+    changed.history = ['file1']
+
+    fileCache.clear();
+    
+    var cacheStream = fileCache.cache();
+
+
+    cacheStream.pipe(gutil.buffer(function () {
+      var filterStream = fileCache.filter();
+
+      filterStream.pipe(gutil.buffer(function(err, files){
+        expect(err).to.not.exist;
+        expect(files).to.deep.eq([changed]);
+
+        done();
+      }));
+
+      filterStream.write(unchanged);
+      filterStream.write(changed);
+      filterStream.end();
+    }))
+    cacheStream.write(original);
+    cacheStream.end();
+  })
 });

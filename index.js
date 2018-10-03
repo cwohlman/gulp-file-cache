@@ -28,7 +28,7 @@ FileCache.prototype.cache = function() {
   // update cache
   function transform(file, enc, callback) {
 
-    var path = file.path,
+    var path = file.history && file.history[0] || file.path,
         stat = file.stat && file.stat.mtime.getTime();
 
     if (path && stat) _this._cache[path] = stat;
@@ -64,7 +64,8 @@ FileCache.prototype.filter = function() {
   var _this = this;
 
   return through.obj(function(file, enc, callback) {
-    var cache = _this._cache[file.path],
+    var path = file.history && file.history[0] || file.path;
+    var cache = _this._cache[path],
         stat = file.stat && file.stat.mtime.getTime();
 
     // filter matching files
